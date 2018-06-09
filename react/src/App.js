@@ -7,7 +7,7 @@ class Utils {
 
     static getParameterByName(name, url) {
         if (!url) url = window.location.href
-        name = name.replace(/[\[\]]/g, "\\$&")
+        name = name.replace(/[[]]/g, "\\$&")
         var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
             results = regex.exec(url)
         if (!results) return null
@@ -22,7 +22,7 @@ class Utils {
             if (i === 8 || i === 12 || i === 16 || i === 20) {
                 uuid += "-"
             }
-            uuid += (i == 12 ? 4 : (i == 16 ? (random & 3 | 8) : random)).toString(16);
+            uuid += (i === 12 ? 4 : (i === 16 ? (random & 3 | 8) : random)).toString(16);
         }
         return uuid;
     }
@@ -30,10 +30,6 @@ class Utils {
 }
 
 class UserSession extends Component {
-
-    constructor(props) {
-        super(props)
-    }
 
     render() {
         return (
@@ -47,14 +43,14 @@ class UserSession extends Component {
                 }
                 { this.props.idToken && ! this.props.credentials ?
                     <div>
-                        Hello {this.props.idToken['given_name']}<br />Fetching your credentials, please wait...
+                        <strong>Hello {this.props.idToken['given_name']}</strong><br />Fetching your credentials, please wait...
                     </div>
                     :
                     <div />
                 }
                 { this.props.credentials ?
                     <div>
-                        Hello {this.props.idToken['given_name']}<br />Your identity is {this.props.credentials['identityId']}
+                        <strong>Hello {this.props.idToken['given_name']}</strong><br />Your identity is {this.props.credentials['identityId']}
                         <br />
                         <a href='index.html'>Logoff</a>
                     </div>
@@ -118,7 +114,7 @@ class ShareFile extends Component {
                     'email',
                     'sub'
                 ],
-                Filter: '\"given_name\" ^= \"' + filter + '\"',
+                Filter: '"given_name" ^= "' + filter + '"',
                 Limit: 0
             };
             this.cip.listUsers(params).promise().then((users) => {
@@ -238,7 +234,7 @@ class FileBox extends Component {
         return (
             <div id="fileBox" className="box">
                 <h2>My files</h2>
-                <span>Upload file</span>
+                <span>Upload file</span><br />
                 <input type='file' id='my-file' onChange={this.upload} />
                 <ul>
                     { this.state.contents.map((v) => {
@@ -253,7 +249,7 @@ class FileBox extends Component {
                     }
                 </ul>
                 { this.state.loading ?
-                    <div><img src='loading.gif' width='30' /></div>
+                    <div><img src='loading.gif' alt='Loading' width='30' /></div>
                     :
                     <div />
                 }
@@ -346,7 +342,7 @@ class App extends Component {
             AWS.config.region = 'ap-southeast-2'
 
             const loginsObj = {
-                ['cognito-idp.ap-southeast-2.amazonaws.com/ap-southeast-2_Jvdm1PThu']: idTokenParam
+                'cognito-idp.ap-southeast-2.amazonaws.com/ap-southeast-2_Jvdm1PThu': idTokenParam
             }
 
             AWS.config.credentials = new AWS.CognitoIdentityCredentials({

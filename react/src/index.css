@@ -1,6 +1,6 @@
 html *
 {
-  font-size: 1em;
+  font-size: 20px;
   color: #000000;
   font-family: Verdana;
 }
@@ -11,10 +11,10 @@ body {
 }
 
 h1 {
+  font-size: 60px;
   margin: 0px;
   padding: 10px;
   background-color: #333366;
-  font-size: 2em;
   color: #aaaaff;
 }
 
@@ -45,10 +45,9 @@ button {
 }
 
 .box {
-  background-color: #e0e0e0;
+  background-color: #f0f0f0;
   margin: 5px;
   padding: 5px;
-  border: 1px solid #aaaaff;
 }
 
 .box li {
