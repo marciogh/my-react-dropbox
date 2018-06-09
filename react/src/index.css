@@ -1,6 +1,6 @@
 html *
 {
-  font-size: 20px;
+  font-size: 10px;
   color: #000000;
   font-family: Verdana;
 }
@@ -11,7 +11,7 @@ body {
 }
 
 h1 {
-  font-size: 60px;
+  font-size: 30px;
   margin: 0px;
   padding: 10px;
   background-color: #333366;
