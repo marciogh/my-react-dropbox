@@ -1,0 +1,20 @@
+{
+  "name": "my-react",
+  "version": "0.1.0",
+  "private": true,
+  "homepage": "https://marciogh.com/my-react/",
+  "dependencies": {
+    "aws-sdk": "^2.254.1",
+    "bluebird": "3.5.1",
+    "react": "^16.4.0",
+    "react-dom": "^16.4.0",
+    "react-scripts": "1.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "deploy": "aws s3 sync build/ s3://marciogh.com/my-react/ --cache-control no-cache --acl public-read --delete",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
