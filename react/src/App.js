@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import Modal from 'react-modal';
 import './App.css';
 
 var AWS = require('aws-sdk');
@@ -29,6 +30,18 @@ class Utils {
 
 }
 
+
+class User extends Component {
+
+    render() {
+        return(
+            <span>
+                Hello {this.props.idToken['given_name']} ({this.props.idToken['cognito:username']})
+            </span>
+        )
+    }
+}
+
 class UserSession extends Component {
 
     render() {
@@ -43,14 +56,14 @@ class UserSession extends Component {
                 }
                 { this.props.idToken && ! this.props.credentials ?
                     <div>
-                        <strong>Hello {this.props.idToken['given_name']}</strong><br />Fetching your credentials, please wait...
+                        <strong><User idToken={this.props.idToken} /></strong><br />Fetching your credentials, please wait...
                     </div>
                     :
                     <div />
                 }
                 { this.props.credentials ?
                     <div>
-                        <strong>Hello {this.props.idToken['given_name']}</strong><br />Your identity is {this.props.credentials['identityId']}
+                        <strong><User idToken={this.props.idToken} /></strong><br />Your AWS identity is {this.props.credentials['identityId']}
                         <br />
                         <a href='index.html'>Logoff</a>
                     </div>
@@ -68,13 +81,36 @@ class ShareFile extends Component {
     constructor(props) {
         super(props)
         this.state = {
-            users: []
+            modalIsOpen: false,
+            users: [],
+            status: null
         }
 
+        this.openModal = this.openModal.bind(this);
+        this.afterOpenModal = this.afterOpenModal.bind(this);
+        this.closeModal = this.closeModal.bind(this);
         this.fetchUsers = this.fetchUsers.bind(this)
         this.share = this.share.bind(this)
         this.cip = new AWS.CognitoIdentityServiceProvider();
         this.dynamo = new AWS.DynamoDB();
+    }
+
+    openModal() {
+        this.setState({
+            modalIsOpen: true,
+            status: null
+        });
+    }
+
+    afterOpenModal() {
+    }
+
+    closeModal() {
+        this.setState({
+            users: [],
+            modalIsOpen: false,
+            status: null
+        });
     }
 
     share(e) {
@@ -96,10 +132,10 @@ class ShareFile extends Component {
             TableName: "my-react-share"
         }).promise().then((r) => {
             this.setState({
-                users: []
+                status: 'Shared!'
             })
             this.props.refreshShared()
-            alert('Shared!')
+            setTimeout(() => {this.closeModal()}, 1000)
         })
     }
 
@@ -132,22 +168,51 @@ class ShareFile extends Component {
     }
 
     render() {
+
+        const customStyles = {
+            /*
+            content : {
+                top                   : '50%',
+                left                  : '50%',
+                right                 : 'auto',
+                bottom                : 'auto',
+                marginRight           : '-50%',
+                transform             : 'translate(-50%, -50%)'
+            }
+            */
+        };
+
         return (
-            <div className="box">
-                <span>Share with </span><input type="text" size='5' onChange={this.fetchUsers} />
-                <div className="shareDropDown">
-                    <ul id={this.props.src} >
-                        { this.state.users.map((user) => {
-                            var sub = user['Attributes']['0']['Value']
-                            var given_name = user['Attributes']['1']['Value']
-                            var family_name = user['Attributes']['2']['Value']
-                            var email = user['Attributes']['3']['Value']
-                            return (
-                                <li id={sub} onClick={this.share}>{given_name} {family_name} {email}</li>
-                            )
-                        })}
-                    </ul>
-                </div>
+            <div>
+                <button onClick={this.openModal}>Share</button>
+                <Modal
+                    isOpen={this.state.modalIsOpen}
+                    onAfterOpen={this.afterOpenModal}
+                    onRequestClose={this.closeModal}
+                    style={customStyles}
+                    contentLabel="Example Modal"
+                >
+                    <div className="box">
+                        <button onClick={this.closeModal}>Cancel</button><br />
+                        <span>Share <strong>{this.props.src.split('/').pop()}</strong> with </span>
+                        <input type="text" onChange={this.fetchUsers} />
+                        <div className="shareDropDown">
+                            <ul id={this.props.src} >
+                                { this.state.users.map((user) => {
+                                    var username = user['Username']
+                                    var sub = user['Attributes']['0']['Value']
+                                    var given_name = user['Attributes']['1']['Value']
+                                    var family_name = user['Attributes']['2']['Value']
+                                    var email = user['Attributes']['3']['Value']
+                                    return (
+                                        <li id={sub} onClick={this.share}>{username} {given_name} {family_name} {email}</li>
+                                    )
+                                })}
+                            </ul>
+                        </div>
+                        <strong>{this.state.status}</strong>
+                    </div>
+                </Modal>
             </div>
         )
     }
@@ -215,6 +280,8 @@ class FileBox extends Component {
 
     deleteObject(key) {
 
+        this.dynamo = new AWS.DynamoDB()
+
         this.setState({
             loading: true
         })
@@ -223,7 +290,36 @@ class FileBox extends Component {
             Bucket: 'my-react',
             Key: key
         }).promise().then(() => {
-            this.refreshObjects()
+            this.dynamo.scan({
+                TableName: 'my-react-share',
+                FilterExpression: "src=:src",
+                ExpressionAttributeValues: {
+                    ":src": {S: key}
+                }
+            }).promise().then((v) => {
+                v['Items'].map((i) => {
+                    console.log(i)
+                    const params = {
+                        TableName: 'my-react-share',
+                        Key: {
+                            "uuid": i.uuid
+                        }
+                    }
+                    console.log(params)
+                    this.dynamo.deleteItem(params, function (err, data) {
+                        if (err) {
+                            console.log('FAIL:  Error deleting item from dynamodb - ' + err);
+                        }
+                        else {
+                            console.log("DEBUG:  deleteItem worked. ");
+                        }
+                    });
+                })
+                this.props.refreshShared()
+                this.refreshObjects()
+            }).catch((e) => {
+                alert(e)
+            })
         }).catch((e) => {
             alert(e)
         })
@@ -349,6 +445,7 @@ class App extends Component {
                 IdentityPoolId: 'ap-southeast-2:1a7c2b8c-0d74-4cc9-9bad-5cfc8fd8551b',
                 Logins: loginsObj
             })
+            AWS.config.credentials.clearCachedId()
 
             this.sts = new AWS.STS()
             this.dynamo = new AWS.DynamoDB()
