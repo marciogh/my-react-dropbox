@@ -2,7 +2,10 @@ import React, { Component } from 'react';
 import Modal from 'react-modal';
 import './App.css';
 
-var AWS = require('aws-sdk');
+var AWS = require('aws-sdk/global');
+var dynamo = require('aws-sdk/clients/dynamodb');
+var s3 = require('aws-sdk/clients/s3');
+var cognito = require('aws-sdk/clients/cognitoidentityserviceprovider');
 
 class Utils {
 
